@@ -1,68 +1,72 @@
-import numpy as np
+import io
 import time
-import random
+import pandas as pd
+import sys
+backup = sys.stdout
 
-dim = int(input("Dimensions? "))
-grid=[[1,0,10,2,0,4,9,11,0,16,0,14,15,0,7,0]
-,[14,16,8,0,5,15,7,12,4,3,1,2,9,0,6,0]
-,[9,12,4,7,10,16,6,1,8,13,15,11,3,5,14,2]
-,[3,6,11,15,2,0,8,14,7,5,10,9,4,16,12,1]
-,[13,4,14,3,8,0,11,10,0,12,0,0,1,15,16,0]
-,[8,11,7,6,4,1,2,16,9,0,14,0,0,3,5,13]
-,[0,9,1,10,13,5,15,6,0,0,16,8,14,2,11,7]
-,[16,15,0,5,0,12,14,3,1,11,7,0,10,6,8,4]
-,[6,2,16,14,0,9,4,13,15,1,12,5,8,7,10,3]
-,[0,0,9,1,0,2,3,5,11,0,8,0,16,12,0,6]
-,[5,0,3,11,1,10,12,7,2,0,4,16,13,0,15,14]
-,[0,10,12,4,0,6,16,8,13,0,3,0,0,0,1,5]
-,[2,3,5,8,12,0,10,15,6,0,9,0,0,1,13,16]
-,[10,0,13,12,0,0,5,9,0,8,11,0,6,4,2,15]
-,[11,1,15,9,0,0,13,4,16,2,5,12,0,0,3,10]
-,[0,14,6,16,7,11,1,2,10,15,13,3,5,8,9,0]]
+class PySudoku:
 
+    def __init__(self, nums: str, fname = 'files\solutions.csv', dims=None, matrix=None):
+        self.fname = fname
+        myGrid = []
+        dims = int(len(nums) ** (1 / 2))
+        nums = str(nums)
+        while nums:
+            row = []
+            myGrid.append(list(map(int, list(nums[:dims]))))
+            nums = nums[dims:]
+        self.grid = myGrid
+        self.dims = dims
 
-grid2 = [[4,0,0,7,5,0,8,0,2],
-       [7,6,0,0,0,0,0,5,9],
-       [0,8,0,0,4,6,0,0,0],
-       [0,0,9,6,3,0,0,2,4],
-       [1,0,0,5,0,0,0,0,0],
-       [2,4,0,0,0,8,5,7,0],
-       [0,1,7,0,9,2,0,4,0],
-       [0,0,0,0,6,3,9,8,0],
-       [3,0,8,0,0,0,0,0,6]]
+    @property
+    def dimensions(self):
+        return len(self.grid)
 
-
-grid4 = [[0,0,4,0],
-         [4,0,3,0],
-         [0,4,0,3],
-         [0,1,0,0]]
-def possible (y,x,n,dim):
-    global grid
-    for i in range(dim):
-        if grid[y][i] == n:
-            return False
-    for i in range(dim):
-        if grid[i][x] == n:
-            return False
-    x0 = (x//int(dim**(1/2)))*int(dim**(1/2))
-    y0 = (y//int(dim**(1/2)))*int(dim**(1/2))
-    for i in range(int(dim**(1/2))):
-        for j in range(int(dim**(1/2))):
-            if grid[y0+i][x0+j] == n:
+    def possible(self, y, x, n, dimensions):
+        for i in range(dimensions):
+            if self.grid[y][i] == n:
                 return False
-    return True
+        for i in range(dimensions):
+            if self.grid[i][x] == n:
+                return False
+        x0 = (x // int(dimensions ** (1 / 2))) * int(dimensions ** (1 / 2))
+        y0 = (y // int(dimensions ** (1 / 2))) * int(dimensions ** (1 / 2))
+        for i in range(int(dimensions ** (1 / 2))):
+            for j in range(int(dimensions ** (1 / 2))):
+                if self.grid[y0 + i][x0 + j] == n:
+                    return False
+        return True
 
-def solver():
-    global grid
-    for y in range(dim):
-        for x in range(dim):
-            if grid[y][x] == 0:
-                for n in range(1,dim+1):
-                    if possible(y,x,n, dim):
-                        grid[y][x] = n
-                        solver()
-                    grid[y][x] = 0
-                return
-    print(np.matrix(grid))
+    def solver(self):
+        for y in range(self.dims):
+            for x in range(self.dims):
+                if self.grid[y][x] == 0:
+                    for n in range(1, self.dims + 1):
+                        if self.possible(y, x, n, self.dims):
+                            self.grid[y][x] = n
+                            self.solver()
+                        self.grid[y][x] = 0
+                    return
 
-solver()
+        sys.stdout = open(self.fname, 'a')
+        print(matrix_to_str(self.grid))
+
+
+def matrix_to_str(matrix):
+    result = ""
+    for row in matrix:
+        for num in row:
+            result += str(num)
+    return result
+
+
+my_csv = pd.read_csv('files\sudoku.csv')
+curr = time.process_time()
+score = 0
+
+for i in (my_csv['head'].loc[:9999]):
+    sudoku = PySudoku(i)
+    sudoku.solver()
+sys.stdout = backup
+end = time.process_time()
+print(f'{end-curr} seconds')
