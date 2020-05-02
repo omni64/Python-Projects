@@ -1,12 +1,18 @@
-import io
-import time
-import pandas as pd
+import os
 import sys
+import time
+
+import pandas as pd
+
 backup = sys.stdout
+if os.path.exists('files\\mytimes.txt'):
+    os.remove('files\\mytimes.txt')
+    os.remove('files\\solutions.csv')
+
 
 class PySudoku:
 
-    def __init__(self, nums: str, fname = 'files\solutions.csv', dims=None, matrix=None):
+    def __init__(self, nums: str, fname='files\solutions.csv', dims=None, matrix=None):
         self.fname = fname
         myGrid = []
         dims = int(len(nums) ** (1 / 2))
@@ -61,12 +67,27 @@ def matrix_to_str(matrix):
 
 
 my_csv = pd.read_csv('files\sudoku.csv')
-curr = time.process_time()
-score = 0
+# curr = time.time_ns()
 
-for i in (my_csv['head'].loc[:9999]):
-    sudoku = PySudoku(i)
-    sudoku.solver()
-sys.stdout = backup
-end = time.process_time()
-print(f'{end-curr} seconds')
+times = {}
+
+
+def run(start, end, score):
+    for i in (my_csv['head'].loc[start: end]):
+        time.sleep(1)
+        score += 1
+        curr = time.time()
+        sudoku = PySudoku(i)
+        sudoku.solver()
+        sys.stdout = backup
+        end = time.time()
+        solve_time = (round((end - curr) * 1000, 3))
+        times_file = open('files\\mytimes.txt', 'a+')
+        print(f'{score},{solve_time}', file=times_file)
+        times_file.close()
+    return score
+
+
+myscore = run(0, 10, 0)
+print('Go')
+run(10, 100, myscore - 1)
